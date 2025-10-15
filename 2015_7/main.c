@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
 #pragma warning(disable : 5045) // Disable QSpectre mitigation warning
+#endif
 
 #define CIRCUIT_SIZE 1000
 
@@ -124,16 +126,23 @@ void printCircuit(Connection circuit[CIRCUIT_SIZE])
 {
     for (int i = 0; i < 8; ++i)
     {
-        printf("Circuit[%hu] -> %s\n", i, circuit[i].outWire == NULL ? "NULL" : circuit[i].outWire);
+        printf("Circuit[%hu] -> %s\n", i, circuit[i].outWire);
+    }
+}
+
+void clearCircuitCache(Connection circuit[CIRCUIT_SIZE])
+{
+    for (int i = 0; i < CIRCUIT_SIZE; ++i)
+    {
+        circuit[i].outValue = -1;
     }
 }
 
 int main(int argc, const char** argv)
 {
-    // NEXT UP: Part 2!
     if (argc < 3)
     {
-        printf("Missing arguments");
+        printf("Missing arguments\n");
         return 1;
     }
 
@@ -156,17 +165,13 @@ int main(int argc, const char** argv)
         char in2[20];
         char out[20];
         char command[10];
-        if (2 <= sscanf_s(line, "%s -> %s", in1, (unsigned int) sizeof(in1), out, (unsigned int) sizeof(out)))
+        if (2 <= sscanf(line, "%s -> %s", in1, out))
         {
             strcpy(circuit[idx].outWire, out);
             strcpy(circuit[idx].inWire[0], in1);
             // printf("Read value: %s\n", in1);
         }
-        else if(4 <= sscanf_s(line, "%s %s %s -> %s",
-                              in1, (unsigned int) sizeof(in1),
-                              command, (unsigned int) sizeof(command),
-                              in2, (unsigned int) sizeof(in2),
-                              out, (unsigned int) sizeof(out)))
+        else if(4 <= sscanf(line, "%s %s %s -> %s", in1, command, in2, out))
         {
             strcpy(circuit[idx].inWire[0], in1);
             strcpy(circuit[idx].inWire[1], in2);
@@ -174,7 +179,7 @@ int main(int argc, const char** argv)
             strcpy(circuit[idx].outWire, out);
             // printf("Read operation: %s\n", command);
         }
-        else if(2 <= sscanf_s(line, "NOT %s -> %s", in1, (unsigned int) sizeof(in1), out, (unsigned int) sizeof(out)))
+        else if(2 <= sscanf(line, "NOT %s -> %s", in1, out))
         {
             strcpy(circuit[idx].inWire[0], in1);
             strcpy(circuit[idx].outWire, out);
@@ -196,6 +201,27 @@ int main(int argc, const char** argv)
     const char* wireOut = argv[2];
     int outValue = getWireOutValue(wireOut, circuit);
     printf("Wire %s has a value of %hu\n\n", wireOut, outValue);
+
+    // PART 2
+    // TODO: Find b's connection in the circuit, transform a's value into char and pass it to b
+    printf("\n\n>>>>>> PART 2 <<<<<<<<\n");
+    Connection* bConn;
+    for (int i = 0; i < CIRCUIT_SIZE; ++i)
+    {
+        if (strcmp(circuit[i].outWire, "b") == 0)
+        {
+            bConn = &circuit[i];
+            break;
+        }
+    }
+
+    clearCircuitCache(circuit);
+    char outValueStr[20];
+    sprintf(outValueStr, "%d", outValue);
+    strcpy(bConn->inWire[0], outValueStr);
+
+    int outValue2 = getWireOutValue(wireOut, circuit);
+    printf("Wire %s has a NEW value of %hu\n\n", wireOut, outValue2);
 
     return 0;
 }
