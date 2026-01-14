@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(AdventOfCode_2025_4)
+project(AdventOfCode_2025_5)
 
 add_executable(main main.c)
 
