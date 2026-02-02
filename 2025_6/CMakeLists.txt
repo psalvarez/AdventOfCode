@@ -9,3 +9,5 @@ if (MSVC)
 else()
     target_compile_options(main PRIVATE -Wall -Wextra -Werror)
 endif()
+
+target_link_libraries(main m)

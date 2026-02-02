@@ -1,6 +1,8 @@
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
+#include "math.h"
+#include <stddef.h>
 
 typedef struct Operations
 {
@@ -8,8 +10,91 @@ typedef struct Operations
     char* operators;
 } Operations;
 
+size_t getOperand(int idx, size_t nLines, char** lines)
+{
+    size_t operand = 0;
+    int nDigits = 0;
+    for (int line = nLines - 2; line >= 0; --line) // Last line is the operator
+    {
+        char digit = lines[line][idx];
+        if (digit == ' ')
+            continue;
+        size_t number = digit - '0';
+        // We subtract 2 to account for i) the operand line, and ii) the array starting at idx == 0
+        operand += number * pow(10, nDigits);
+        ++nDigits;
+        printf("%c - %zu - 10 ^ %d = %zu\n", digit, number, nDigits, operand);
+    }
+
+    return operand;
+}
+
+char getOperator(char readChar, char currentOp)
+{
+    if(readChar != ' ' && readChar != '\n')
+        return readChar;
+
+    return currentOp;
+}
+
 // I'm using dynamically allocated arrays for fun here
-int main()
+size_t partTwo()
+{
+    char* inBuffer = NULL;
+    char** lines = NULL;
+    size_t bufferSize = 0;
+    size_t nLines = 0;
+    ssize_t charsRead = 0;
+    while((charsRead = getline(&inBuffer, &bufferSize, stdin)) != -1) // getline manages memory for us
+    {
+        lines = realloc(lines, (nLines + 1) * sizeof(char*));
+        lines[nLines] = malloc(charsRead); // lines[i] is uninitialised at this point, so realloc would be undefined behavior.
+
+        memcpy(lines[nLines], inBuffer, charsRead);
+
+        printf("%zu,%zu - %s", nLines, charsRead, lines[nLines]);
+        ++nLines;
+    }
+
+    int idx = 0;
+    char operator = 'n';
+    size_t total = 0;
+    size_t opResult = 0;
+    // while we don't find EOL, for each column
+    while (lines[0][idx] != '\n')
+    {
+        printf("=========== %c --\n", lines[0][idx]);
+        operator = getOperator(lines[nLines - 1][idx], operator);
+        // Read all lines - 1 (i.e., all lines except operator) char by char
+        size_t operand = getOperand(idx, nLines, lines);
+        printf("%zu %c\n", operand, operator);
+
+        if (operand == 0)
+        {
+            // Separator column reached, restart op result
+            total += opResult;
+            opResult = 0;
+        }
+        else
+        {
+            if (operator == '*')
+            {
+                opResult = opResult == 0 ? operand : operand * opResult;
+            }
+            else if (operator == '+')
+            {
+                opResult += operand;
+            }
+        }
+        ++idx;
+    }
+    // Add result of last op
+    total += opResult;
+    printf("%zu\n", opResult);
+    return total;
+}
+
+int partOne()
 {
     char* inBuffer = NULL;
 
@@ -89,4 +174,14 @@ int main()
     // >920578270
     printf("%zu\n", total);
 
+    return total;
+}
+
+int main()
+{
+    // printf("%d", partOne());
+    size_t result = partTwo();
+    printf("------\n");
+    printf("%zu\n", result);
+    return 0;
 }
